@@ -222,6 +222,8 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
 
+        'DownloadsManager\Storage' => \App\DownloadsManager\Components\DownloadsStorage::class
+
     ],
 
 ];

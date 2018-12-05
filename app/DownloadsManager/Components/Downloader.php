@@ -2,9 +2,16 @@
 
 namespace App\DownloadsManager\Components;
 
-class Downloader 
+class Downloader implements Contract\DownloaderInterface
 {
-    public function download($url, $name) 
+    private $storage;
+
+    public function __construct(DownloadsStorage $storage)
+    {
+        $this->storage = $storage;
+    }
+
+    public function download(string $url, string $name)
     {
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -21,7 +28,7 @@ class Downloader
             throw new DownloadFailedException("Downloading of '{$url}' failed. Details: '{$error}'.");
         }
 
-        DownloadsStorage::put($name, $content);
+        $this->storage->put($name, $content);
     }
 }
 

@@ -2,9 +2,10 @@
 
 namespace Tests\Feature\routes;
 
+use App\DownloadsManager\Components\Downloader;
+use App\DownloadsManager\Components\DownloadsStorage;
+use App\Jobs\ProcessDownload;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Session;
 
 use App\DownloadsManager\Components\DownloadsManager;
@@ -50,10 +51,10 @@ class WebTest extends TestCase
     public function testDownloads_download()
     {
         $url = "http://google.com";
-        $download = DownloadsManager::addDownload($url);
+        $download = (new DownloadsManager())->addDownload($url);
 
-        $job = new \App\Jobs\ProcessDownload(Download::where('id', $download->id)->first());
-        $job->handle(new \App\DownloadsManager\Components\Downloader());
+        $job = new ProcessDownload(Download::where('id', $download->id)->first());
+        $job->handle(new Downloader(new DownloadsStorage()), new DownloadsManager());
         
         $response = $this->get("/downloads/download/{$download->id}");
         

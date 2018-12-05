@@ -13,36 +13,39 @@ class DownloadsController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @param DownloadsManager $manager
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function all()
+    public function all(DownloadsManager $manager)
     {
-        return DownloadsManager::getAll();
+        return $manager->getAll();
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  \Illuminate\Http\Request $request
+     * @param DownloadsManager $manager
+     * @return DownloadResource
      */
-    public function add(Request $request)
+    public function add(Request $request, DownloadsManager $manager)
     {
         $request->validate([
             'url' => 'required|url'
         ]);
 
-        return DownloadsManager::addDownload($request->url);
+        return $manager->addDownload($request->url);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param  int $id
+     * @param DownloadsManager $manager
+     * @return DownloadResource
      */
-    public function get(int $id)
+    public function get(int $id, DownloadsManager $manager)
     {
-        return DownloadsManager::getDownload($id);
+        return $manager->getDownload($id);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\DownloadsManager\Components\DownloadFailedException;
+use App\DownloadsManager\Models\Download;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -24,34 +26,33 @@ class ProcessDownload implements ShouldQueue
     public $tries = 5;
 
     /**
-     * Create a new job instance.
-     *
-     * @return void
+     * ProcessDownload constructor.
+     * @param Download $download
      */
-    public function __construct(\App\DownloadsManager\Models\Download $download)
+    public function __construct(Download $download)
     {
         //
         $this->download = $download;
     }
 
     /**
-     * Execute the job.
-     *
-     * @return void
+     * @param Downloader $downloader
+     * @param DownloadsManager $manager
+     * @throws DownloadFailedException
      */
-    public function handle(Downloader $downloader)
+    public function handle(Downloader $downloader, DownloadsManager $manager)
     {
-        DownloadsManager::updateStatus($this->download, DownloadStatus::PROCESSING, 'Processing started...');
+        $manager->updateStatus($this->download, DownloadStatus::PROCESSING, 'Processing started...');
 
         try 
         {
             $downloader->download($this->download->original_url, $this->download->filename);
 
-            DownloadsManager::updateStatus($this->download, DownloadStatus::COMPLETED, 'Download completed.');
+            $manager->updateStatus($this->download, DownloadStatus::COMPLETED, 'Download completed.');
         }
-        catch(\App\DownloadsManager\Components\DownloadFailedException $ex) 
+        catch(DownloadFailedException $ex)
         {
-            DownloadsManager::updateStatus($this->download, DownloadStatus::FAILED, "Downloading failed. Reason: '".$ex->getMessage()."'.");
+            $manager->updateStatus($this->download, DownloadStatus::FAILED, "Downloading failed. Reason: '".$ex->getMessage()."'.");
 
             throw $ex;
         }

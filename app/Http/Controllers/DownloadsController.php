@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DownloadsManager\Components\DownloadsManager;
+use App\DownloadsManager\Components\DownloadsStorage;
 use App\Jobs\ProcessDownload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -22,35 +23,36 @@ class DownloadsController extends Controller
     /**
      * Show the application dashboard.
      *
+     * @param DownloadsManager $manager
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(DownloadsManager $manager)
     {
-        $downloads = DownloadsManager::getAll();
+        $downloads = $manager->getAll();
 
         return view('downloads.index', [
             'downloads' => $downloads->collection
         ]);
     }
 
-    public function add(Request $request) 
+    public function add(Request $request, DownloadsManager $manager)
     {
         $request->validate([
             'url' => 'required|url'
         ]);
 
-        DownloadsManager::addDownload($request->url);
+        $manager->addDownload($request->url);
 
         return redirect('downloads')->with('status', 'Url submitted.');
     }
 
-    public function download($id) 
+    public function download($id, DownloadsManager $manager, DownloadsStorage $storage)
     {
-        $download = DownloadsManager::getDownload($id);
+        $download = $manager->getDownload($id);
 
         if($download) 
         {
-            return \App\DownloadsManager\Components\DownloadsStorage::download($download->filename);
+            return $storage->download($download->filename);
         }
         else 
         {

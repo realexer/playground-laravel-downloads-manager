@@ -2,13 +2,10 @@
 
 namespace Tests\Feature\routes;
 
+use App\DownloadsManager\Components\DownloadsManager;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
 
 use App\DownloadsManager\Models\Download;
-use App\Http\Resources\Download as DownloadResource;
 
 class ConsoleTest extends TestCase
 {
@@ -52,7 +49,7 @@ class ConsoleTest extends TestCase
     
     public function testDownloads_get()
     {
-        $download = \App\DownloadsManager\Components\DownloadsManager::addDownload("http://google.com");
+        $download = (new DownloadsManager())->addDownload("http://google.com");
 
         $command = $this->artisan('downloads:get', ['id' => $download->id]);
         $command->assertExitCode(0);

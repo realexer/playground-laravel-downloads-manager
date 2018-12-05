@@ -2,6 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\DownloadsManager\Components\Downloader;
+use App\DownloadsManager\Components\DownloadFailedException;
+use App\DownloadsManager\Components\DownloadsStorage;
+use App\DownloadsManager\Models\DownloadsLog;
+use App\Jobs\ProcessDownload;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -27,7 +32,7 @@ class DownloadsManagerTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        $result = DownloadsManager::addDownload("invalid_url");
+        $result = (new DownloadsManager())->addDownload("invalid_url");
 
         $this->assertNull($result);
     }
@@ -40,49 +45,47 @@ class DownloadsManagerTest extends TestCase
     public function testAddDownload_validUrl_queue()
     {
         $url = "http://google.com";
-        $download = DownloadsManager::addDownload($url);
+        $download = (new DownloadsManager())->addDownload($url);
         
         $this->assertEquals($download->original_url, $url);
-        $this->assertEquals($download->status, \App\DownloadsManager\Models\Download\Status::SUBMITTED);
+        $this->assertEquals($download->status, Download\Status::SUBMITTED);
 
-        Queue::assertPushed(\App\Jobs\ProcessDownload::class, function ($job) use ($download) {
+        Queue::assertPushed(ProcessDownload::class, function ($job) use ($download) {
             return $job->download->id === $download->id;
         });
     }
 
     public function testAddDownload_validUrl_dispatch_unreachable()
     {
-        $this->expectException(\App\DownloadsManager\Components\DownloadFailedException::class);
+        $this->expectException(DownloadFailedException::class);
 
         $url = "http://google2.com";
-        $download = DownloadsManager::addDownload($url);
+        $download = (new DownloadsManager())->addDownload($url);
 
-        $job = new \App\Jobs\ProcessDownload(Download::where('id', $download->id)->first());
-        $job->handle(new \App\DownloadsManager\Components\Downloader());
+        $job = new ProcessDownload(Download::where('id', $download->id)->first());
+        $job->handle(new Downloader(new DownloadsStorage()), new DownloadsManager());
 
-        $downloaded = DownloadsManager::getDownload($download->id);
-        $this->assertEquals($downloaded->status, \App\DownloadsManager\Models\Download\Status::FAILED);
+        $downloaded = (new DownloadsManager())->getDownload($download->id);
+        $this->assertEquals($downloaded->status, Download\Status::FAILED);
 
         $this->assertNull($downloaded->download_url);
     }
 
     /**
-     * A basic test example.
-     *
-     * @return void
+     * @throws \App\DownloadsManager\Components\DownloadFailedException
      */
     public function testAddDownload_validUrl_dispatch_richable()
     {
         $url = "http://google.com";
-        $download = DownloadsManager::addDownload($url);
+        $download = (new DownloadsManager())->addDownload($url);
 
-        $job = new \App\Jobs\ProcessDownload(Download::where('id', $download->id)->first());
-        $job->handle(new \App\DownloadsManager\Components\Downloader());
+        $job = new ProcessDownload(Download::where('id', $download->id)->first());
+        $job->handle(new Downloader(new DownloadsStorage()), new DownloadsManager());
 
-        $downloaded = DownloadsManager::getDownload($download->id);
-        $this->assertEquals($downloaded->status, \App\DownloadsManager\Models\Download\Status::COMPLETED);
+        $downloaded = (new DownloadsManager())->getDownload($download->id);
+        $this->assertEquals($downloaded->status, Download\Status::COMPLETED);
 
-        $this->assertEquals($downloaded->download_url, \App\DownloadsManager\Components\DownloadsStorage::getUrl($download->filename));
+        $this->assertEquals($downloaded->download_url, (new DownloadsStorage())->getUrl($download->filename));
     }
 
     /**
@@ -92,13 +95,15 @@ class DownloadsManagerTest extends TestCase
      */
     public function testAddDownload_getAll()
     {
+        $manager = new DownloadsManager();
+
         Download::truncate();
-        \App\DownloadsManager\Models\DownloadsLog::truncate();
+        DownloadsLog::truncate();
 
-        DownloadsManager::addDownload("http://google.com");
-        DownloadsManager::addDownload("http://google2.com");
+        $manager->addDownload("http://google.com");
+        $manager->addDownload("http://google2.com");
 
-        $allDownloads = DownloadsManager::getAll();
+        $allDownloads = (new DownloadsManager())->getAll();
 
         $this->assertEquals(count($allDownloads->collection), 2);
         $this->assertEquals($allDownloads->collection[0]->original_url, "http://google2.com");

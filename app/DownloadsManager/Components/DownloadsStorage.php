@@ -4,24 +4,24 @@ namespace App\DownloadsManager\Components;
 
 use Illuminate\Support\Facades\Storage;
 
-class DownloadsStorage 
+class DownloadsStorage implements Contract\DownloadsStorageInterface
 {
-    public static function put($name, $content) 
+    public function put(string $name, string $content)
     {
         Storage::disk('local')->put($name, $content);
     }
     
-    public static function get($name) 
+    public function get(string $name)
     {
         Storage::disk('local')->get($name);
     }
 
-    public static function getUrl($name) 
+    public function getUrl(string $name)
     {
         return Storage::url($name);
     }
     
-    public static function download($name) 
+    public function download(string $name)
     {
         return Storage::download($name);
     }

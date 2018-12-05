@@ -3,8 +3,6 @@
 namespace Tests\Feature\routes;
 
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use App\DownloadsManager\Models\Download;
 use App\Http\Resources\Download as DownloadResource;

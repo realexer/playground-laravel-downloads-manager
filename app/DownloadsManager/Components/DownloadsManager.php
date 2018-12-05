@@ -9,14 +9,14 @@ use App\Jobs\ProcessDownload;
 use App\DownloadsManager\Models\Download\Status as DownloadStatus;
 
 
-class DownloadsManager 
+class DownloadsManager implements Contract\DownloadsManagerInterface
 {
-    public static function getAll() 
+    public function getAll()
     {
         return DownloadResource::collection(Download::orderBy('id', 'desc')->get());
     }
 
-    public static function addDownload($url) 
+    public function addDownload(string $url)
     {
         if(filter_var($url, FILTER_VALIDATE_URL) === false) {
             throw new \InvalidArgumentException("Submitted url '{$url}' is not valid.");
@@ -27,14 +27,14 @@ class DownloadsManager
         $download->filename = \Illuminate\Support\Str::random(20);
         $download->original_url = $url;
 
-        self::updateStatus($download, DownloadStatus::SUBMITTED, 'Request for download submitted.');
+        $this->updateStatus($download, DownloadStatus::SUBMITTED, 'Request for download submitted.');
 
         ProcessDownload::dispatch($download);
 
         return new DownloadResource($download);
     }
 
-    public static function updateStatus(Download $download, $status, $message) 
+    public function updateStatus(Download $download, string $status, string $message)
     {
         $download->status = $status;
         $download->save();
@@ -49,7 +49,7 @@ class DownloadsManager
         return new DownloadResource($download);
     }
 
-    public static function getDownload(int $id) 
+    public function getDownload(int $id)
     {
         return new DownloadResource(Download::where('id', $id)->first());
     }
