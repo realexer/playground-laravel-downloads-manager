@@ -1,0 +1,64 @@
+version: '3.0'
+
+services:
+
+  http:
+    build: images/php-apache/
+    container_name: dm-http
+    restart: always
+    ports:
+      - 8091:80
+    volumes:
+      - ../:/var/www/html
+      - ./configs/web/.env:/var/www/html/.env
+
+#    command: >
+#        bash -c "
+#        composer install &&
+#        npm install &&
+#        apache2-foreground"
+
+    depends_on:
+      - postgres
+
+  dm-processor:
+    build: images/php-cli/
+    # static names are not supported when using --scale
+    # and couldn't find a way to generate container name based on the scale number
+    # while docker has no problems generating container names that include build_$(name)_$id
+    # so that why build name is changed from "processor" to "dm-processor", to make it easier to identify
+    # containers by name and not the image name
+    # container_name: dm-processor
+    restart: always
+    volumes:
+      - ../:/downloads-manager
+      - ./configs/web/.env:/downloads-manager/.env
+    working_dir: /downloads-manager
+    depends_on:
+      - postgres
+
+    command: php artisan queue:work
+
+#    command: >
+#        bash -c "
+#        composer install &&
+#        npm install &&
+#        php artisan migrate &&
+#        php artisan queue:work"
+
+  postgres:
+    image: postgres
+    container_name: dm-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
+
+  pgadmin:
+    image: fenglc/pgadmin4
+    container_name: dm-pgadmin
+    ports:
+      - 5050:5050
+    links:
+      - postgres

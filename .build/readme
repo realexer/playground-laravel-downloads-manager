@@ -1,0 +1,12 @@
+;
+; bring pgadmin up and create db first
+;
+# docker-compose up pgadmin
+;
+; sql>  CREATE DATABSE "downloads-manager"
+;
+
+;
+; run everything together
+;
+# docker-compose up
